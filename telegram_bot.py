@@ -1,11 +1,15 @@
 import requests
+import hashlib
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-
 
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 APPROVAL_STORE = {}  # Menyimpan tweet sementara berdasarkan message_id
 
+def short_hash(text):
+    return hashlib.sha256(text.encode()).hexdigest()[:16]  # hash aman max 64 karakter
+
 def send_for_approval(tweet_text):
+    tweet_hash = short_hash(tweet_text)
     url = f"{BASE_URL}/sendMessage"
     data = {
         "chat_id": TELEGRAM_CHAT_ID,
@@ -13,18 +17,17 @@ def send_for_approval(tweet_text):
         "parse_mode": "Markdown",
         "reply_markup": {
             "inline_keyboard": [[
-                {"text": "✅ Approve", "callback_data": f"approve::{tweet_text}"},
-                {"text": "❌ Reject", "callback_data": "reject"}
+                {"text": "✅ Approve", "callback_data": f"approve::{tweet_hash}"},
+                {"text": "❌ Reject", "callback_data": f"reject::{tweet_hash}"}
             ]]
         }
     }
 
     resp = requests.post(url, json=data).json()
 
-    # Simpan tweet di memory sementara
     if "result" in resp and "message_id" in resp["result"]:
         message_id = resp["result"]["message_id"]
-        APPROVAL_STORE[message_id] = tweet_text
+        APPROVAL_STORE[tweet_hash] = tweet_text
     else:
         print("❌ Gagal kirim ke Telegram:", resp)
 
@@ -32,35 +35,38 @@ def handle_callback(update):
     callback = update.get("callback_query", {})
     data = callback.get("data")
     message = callback.get("message", {})
-    message_id = message.get("message_id")
     chat_id = message.get("chat", {}).get("id")
+    callback_id = callback.get("id")
 
-    if data.startswith("approve::"):
-        from twitter_client import post_tweet
+    if "::" in data:
+        action, tweet_hash = data.split("::", 1)
 
-        tweet_text = data.split("approve::", 1)[1]
-        success = post_tweet(tweet_text)
+        if action == "approve":
+            from twitter_client import post_tweet
+            tweet_text = APPROVAL_STORE.get(tweet_hash)
+            if tweet_text:
+                success = post_tweet(tweet_text)
+                text = "✅ Tweet posted successfully!" if success else "❌ Failed to post tweet."
+            else:
+                text = "⚠️ Tweet not found in memory."
 
-        text = "✅ Tweet posted successfully!" if success else "❌ Failed to post tweet."
+        elif action == "reject":
+            text = "❌ Tweet rejected."
 
-        # Balasan ke Telegram
+        else:
+            text = "⚠️ Unknown action."
+
+        # Kirim respons ke Telegram
         requests.post(f"{BASE_URL}/sendMessage", json={
             "chat_id": chat_id,
             "text": text
         })
 
-    elif data == "reject":
-        requests.post(f"{BASE_URL}/sendMessage", json={
-            "chat_id": chat_id,
-            "text": "❌ Tweet rejected."
-        })
-
-    # Hapus dari store jika ada
-    if message_id in APPROVAL_STORE:
-        APPROVAL_STORE.pop(message_id)
+        # Hapus dari store
+        if tweet_hash in APPROVAL_STORE:
+            APPROVAL_STORE.pop(tweet_hash)
 
     # Acknowledge button click
-    callback_id = callback.get("id")
     if callback_id:
         requests.post(f"{BASE_URL}/answerCallbackQuery", json={
             "callback_query_id": callback_id
