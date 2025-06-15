@@ -1,4 +1,6 @@
-import requests from config import GEMINI_API_KEY import time
+import requests
+import time
+from config import GEMINI_API_KEY
 
 API_KEYS = GEMINI_API_KEY.split(",") current_key_index = 0
 
