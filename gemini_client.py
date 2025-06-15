@@ -11,7 +11,7 @@ def generate_tweet():
 
     for _ in range(len(API_KEYS)):
         use_key = API_KEYS[current_key_index]
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={use_key}"
+        url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={use_key}"
         data = {
             "contents": [
                 {
