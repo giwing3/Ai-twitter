@@ -1,4 +1,5 @@
-import requests from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+import requests from config
+import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
