@@ -1,10 +1,9 @@
-<<<<<<< HEAD
 import requests from config
 import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 =======
 import requests
 from config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
->>>>>>> 2e551c3 (Tambahkan deskripsi singkat tentang perubahan kamu di sini)
+
 
 BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 APPROVAL_STORE = {}  # Menyimpan tweet sementara berdasarkan message_id

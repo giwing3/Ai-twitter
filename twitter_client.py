@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import tweepy from config
 import TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET
 =======
